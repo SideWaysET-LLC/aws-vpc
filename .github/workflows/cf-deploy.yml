@@ -11,6 +11,7 @@ jobs:
     - uses: actions/checkout@v1
     - uses: mgenteluci/cloudformation-deploy-action@v1.3.0
       env:
+        TEMPLATE: 'CloudFormationLab.yml'
         AWS_STACK_NAME: 'vpc-with-two-subnets'
         AWS_REGION: 'us-east-1'
         AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
