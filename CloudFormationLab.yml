@@ -131,10 +131,11 @@
       #     RouteTableId: !Ref PrivateRouteTable
 
       #Create EC2 Instances in public and private subnet 
-      MyInstance:
-        Type: AWS::EC2::Instance
-        Properties:
-          AvailabilityZone: us-east-1a
-          ImageId: ami-0ff8a91507f77f867
+      # MyInstance:
+      #   Type: AWS::EC2::Instance
+      #   Properties:
+      #     AvailabilityZone: us-east-1a
+      #     ImageId: ami-0ff8a91507f77f867
       #Hint: look at cloud formation template sections, you will need to parametrize stuff 
       #Hint: look at cloud formation intrinsic functions and pseudo parameters they will be used.
+      
