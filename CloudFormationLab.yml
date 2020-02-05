@@ -9,18 +9,18 @@
     #   A NAT Gateway for outbound access (with routes from Private Subnets set to use it)
     #     
     Resources:
-      PubPrivateVPC:
+      PubPrivateVPC: #all VpcID !Ref to here
         Type: 'AWS::EC2::VPC'
         Properties:
-          CidrBlock: 172.31.0.0/16
+          CidrBlock: 172.31.0.0/16 #size of VPC /16 largest /28 smallest
      
       PublicSubnet1:
         Type: 'AWS::EC2::Subnet'
         Properties:
-          VpcId: !Ref PubPrivateVPC
+          VpcId: !Ref PubPrivateVPC 
           AvailabilityZone: us-east-1a
           CidrBlock: 172.31.1.0/24
-          MapPublicIpOnLaunch: true
+          MapPublicIpOnLaunch: true #gives a public IPv4 address thus making it public subnet
      
       # PublicSubnet2:
       #   Type: 'AWS::EC2::Subnet'
@@ -36,7 +36,7 @@
           VpcId: !Ref PubPrivateVPC
           AvailabilityZone: us-east-1a
           CidrBlock: 172.31.3.0/24
-          MapPublicIpOnLaunch: false
+          MapPublicIpOnLaunch: false #makes it a private subnet
      
       # PrivateSubnet2:
       #   Type: 'AWS::EC2::Subnet'
@@ -47,20 +47,20 @@
       #     MapPublicIpOnLaunch: false
      
       
-      # InternetGateway:
-      #   Type: 'AWS::EC2::InternetGateway'
-      #   Properties:
-      #     Tags:
-      #       - Key: Name
-      #         Value: !Join [_, [!Ref 'AWS::StackName']]
-      #       - Key: Network
-      #         Value: Public
+      InternetGateway:
+        Type: 'AWS::EC2::InternetGateway' #creates gateway
+        Properties:
+          Tags:
+            - Key: Name
+              Value: !Join [_, [!Ref 'AWS::StackName']] #where is this ref?? '_' = delimiter??
+            - Key: Network
+              Value: Public
       
-      # GatewayToInternet:
-      #   Type: 'AWS::EC2::VPCGatewayAttachment'
-      #   Properties:
-      #     VpcId: !Ref PubPrivateVPC
-      #     InternetGatewayId: !Ref InternetGateway
+      GatewayToInternet:
+        Type: 'AWS::EC2::VPCGatewayAttachment' #conects internet and VPC using gateway
+        Properties:
+          VpcId: !Ref PubPrivateVPC
+          InternetGatewayId: !Ref InternetGateway
       
       PublicRouteTable:
         Type: 'AWS::EC2::RouteTable'
@@ -90,21 +90,21 @@
       #     SubnetId: !Ref PublicSubnet2
       #     RouteTableId: !Ref PublicRouteTable
      
-      # NatGateway:
-      #   Type: "AWS::EC2::NatGateway"
-      #   DependsOn: NatPublicIP
-      #   Properties: 
-      #     AllocationId: !GetAtt NatPublicIP.AllocationId
-      #     SubnetId: !Ref PublicSubnet1
+      NatGateway:
+        Type: "AWS::EC2::NatGateway" #allows private subnet to connect w/ internet or other AWS services
+        DependsOn: NatPublicIP
+        Properties: 
+          AllocationId: !GetAtt NatPublicIP.AllocationId #EIP to associate w/ NAT gateway
+          SubnetId: !Ref PublicSubnet1
      
-      # NatPublicIP:
-      #   Type: "AWS::EC2::EIP"
-      #   DependsOn: PubPrivateVPC
-      #   Properties:
-      #     Domain: vpc
+      NatPublicIP:
+        Type: "AWS::EC2::EIP"
+        DependsOn: PubPrivateVPC
+        Properties:
+          Domain: vpc
      
       PrivateRouteTable:
-        Type: 'AWS::EC2::RouteTable'
+        Type: 'AWS::EC2::RouteTable' #route table to add routes to associate w/ subnet
         Properties:
           VpcId: !Ref PubPrivateVPC
           Tags:
@@ -112,14 +112,14 @@
               Value: Private
       
       PrivateRoute:
-        Type: 'AWS::EC2::Route'
+        Type: 'AWS::EC2::Route' #specifies route in route table 
         Properties:
           RouteTableId: !Ref PrivateRouteTable
           DestinationCidrBlock: 0.0.0.0/0
           NatGatewayId: !Ref NatGateway
      
       PrivateSubnet1RouteTableAssociation:
-        Type: 'AWS::EC2::SubnetRouteTableAssociation'
+        Type: 'AWS::EC2::SubnetRouteTableAssociation' #associates a subnet with a route table
         Properties:
           SubnetId: !Ref PrivateSubnet1
           RouteTableId: !Ref PrivateRouteTable
