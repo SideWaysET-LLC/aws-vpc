@@ -18,7 +18,6 @@
         Type: 'AWS::EC2::Subnet'
         Properties:
           VpcId: !Ref PubPrivateVPC 
-          AvailabilityZone: us-east-1a
           CidrBlock: 172.31.1.0/24
           MapPublicIpOnLaunch: true #gives a public IPv4 address thus making it public subnet
      
@@ -34,7 +33,6 @@
         Type: 'AWS::EC2::Subnet'
         Properties:
           VpcId: !Ref PubPrivateVPC
-          AvailabilityZone: us-east-1a
           CidrBlock: 172.31.3.0/24
           MapPublicIpOnLaunch: false #makes it a private subnet
      
@@ -92,7 +90,6 @@
      
       NatGateway:
         Type: "AWS::EC2::NatGateway" #allows private subnet to connect w/ internet or other AWS services
-        DependsOn: NatPublicIP
         Properties: 
           AllocationId: !GetAtt NatPublicIP.AllocationId #EIP to associate w/ NAT gateway
           SubnetId: !Ref PublicSubnet1
