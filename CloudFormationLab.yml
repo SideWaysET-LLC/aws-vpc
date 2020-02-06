@@ -1,140 +1,77 @@
+#Tina Liu Feb 5, 2020
 # Usage:
     #   aws cloudformation --region <region> create-stack --stack-name <stack name> --template-body file://vpc-fargate.yaml
     
-    # This template will:
-    #   Create a VPC with:
-    #       2 Public Subnets
-    #       2 Private Subnets
-    #   An Internet Gateway (with routes to it for Public Subnets)
-    #   A NAT Gateway for outbound access (with routes from Private Subnets set to use it)
+    # This template will create:
+    #   A VPC with:
+    #       1 Public Subnet
+    #       1 Private Subnet
+    #   An Internet Gateway (with routes to it for Public Subnet)
+    #   And Route Table + Route + Route Table Associaions for each subnet   
     #     
     Resources:
-      PubPrivateVPC:
+      PubPrivateVPC: #all VpcID !Ref to here
         Type: 'AWS::EC2::VPC'
         Properties:
-          CidrBlock: 172.31.0.0/16
+          CidrBlock: 172.31.0.0/16 #size of VPC /16 largest /28 smallest
      
       PublicSubnet1:
         Type: 'AWS::EC2::Subnet'
         Properties:
-          VpcId: !Ref PubPrivateVPC
-          AvailabilityZone: us-east-1a
+          VpcId: !Ref PubPrivateVPC 
           CidrBlock: 172.31.1.0/24
-          MapPublicIpOnLaunch: true
-     
-      # PublicSubnet2:
-      #   Type: 'AWS::EC2::Subnet'
-      #   Properties:
-      #     VpcId: !Ref PubPrivateVPC
-      #     AvailabilityZone: us-east-1b
-      #     CidrBlock: 172.31.2.0/24
-      #     MapPublicIpOnLaunch: true
+          MapPublicIpOnLaunch: true #gives a public IPv4 address thus making it public subnet
      
       PrivateSubnet1:
         Type: 'AWS::EC2::Subnet'
         Properties:
           VpcId: !Ref PubPrivateVPC
-          AvailabilityZone: us-east-1a
           CidrBlock: 172.31.3.0/24
-          MapPublicIpOnLaunch: false
-     
-      # PrivateSubnet2:
-      #   Type: 'AWS::EC2::Subnet'
-      #   Properties:
-      #     VpcId: !Ref PubPrivateVPC
-      #     AvailabilityZone: us-east-1b
-      #     CidrBlock: 172.31.4.0/24
-      #     MapPublicIpOnLaunch: false
-     
+          MapPublicIpOnLaunch: false #does not give a public IPv4 address
       
-      # InternetGateway:
-      #   Type: 'AWS::EC2::InternetGateway'
-      #   Properties:
-      #     Tags:
-      #       - Key: Name
-      #         Value: !Join [_, [!Ref 'AWS::StackName']]
-      #       - Key: Network
-      #         Value: Public
+      InternetGateway:
+        Type: 'AWS::EC2::InternetGateway' #creates gateway, no properties necessary 
       
-      # GatewayToInternet:
-      #   Type: 'AWS::EC2::VPCGatewayAttachment'
-      #   Properties:
-      #     VpcId: !Ref PubPrivateVPC
-      #     InternetGatewayId: !Ref InternetGateway
-      
-      PublicRouteTable:
-        Type: 'AWS::EC2::RouteTable'
+      VPCGatewayAttachment:
+        Type: 'AWS::EC2::VPCGatewayAttachment' #conects internet and VPC using gateway
         Properties:
           VpcId: !Ref PubPrivateVPC
-          Tags:
-            - Key: Network
-              Value: Public
+          InternetGatewayId: !Ref InternetGateway
+      
+      PublicRouteTable:
+        Type: 'AWS::EC2::RouteTable' #route table to hold associations between routes and subnet
+        Properties:
+          VpcId: !Ref PubPrivateVPC
       
       PublicRoute:
-        Type: 'AWS::EC2::Route'
-        DependsOn: GatewayToInternet
+        Type: 'AWS::EC2::Route' #specifies route in route table 
+        DependsOn: VPCGatewayAttachment
         Properties:
           RouteTableId: !Ref PublicRouteTable
           DestinationCidrBlock: 0.0.0.0/0
           GatewayId: !Ref InternetGateway
      
       PublicSubnet1RouteTableAssociation:
-        Type: 'AWS::EC2::SubnetRouteTableAssociation'
+        Type: 'AWS::EC2::SubnetRouteTableAssociation' #associates a subnet with a route table
         Properties:
           SubnetId: !Ref PublicSubnet1
           RouteTableId: !Ref PublicRouteTable
      
-      # PublicSubnet2RouteTableAssociation:
-      #   Type: 'AWS::EC2::SubnetRouteTableAssociation'
-      #   Properties:
-      #     SubnetId: !Ref PublicSubnet2
-      #     RouteTableId: !Ref PublicRouteTable
-     
-      # NatGateway:
-      #   Type: "AWS::EC2::NatGateway"
-      #   DependsOn: NatPublicIP
-      #   Properties: 
-      #     AllocationId: !GetAtt NatPublicIP.AllocationId
-      #     SubnetId: !Ref PublicSubnet1
-     
-      # NatPublicIP:
-      #   Type: "AWS::EC2::EIP"
-      #   DependsOn: PubPrivateVPC
-      #   Properties:
-      #     Domain: vpc
-     
       PrivateRouteTable:
-        Type: 'AWS::EC2::RouteTable'
+        Type: 'AWS::EC2::RouteTable' 
         Properties:
           VpcId: !Ref PubPrivateVPC
-          Tags:
-            - Key: Network
-              Value: Private
       
       PrivateRoute:
-        Type: 'AWS::EC2::Route'
+        Type: 'AWS::EC2::Route' 
         Properties:
           RouteTableId: !Ref PrivateRouteTable
           DestinationCidrBlock: 0.0.0.0/0
-          NatGatewayId: !Ref NatGateway
+          #no GatewayID because no access to internet makes it private
      
       PrivateSubnet1RouteTableAssociation:
-        Type: 'AWS::EC2::SubnetRouteTableAssociation'
+        Type: 'AWS::EC2::SubnetRouteTableAssociation' 
         Properties:
           SubnetId: !Ref PrivateSubnet1
-          RouteTableId: !Ref PrivateRouteTable
-     
-      # PrivateSubnet2RouteTableAssociation:
-      #   Type: 'AWS::EC2::SubnetRouteTableAssociation'
-      #   Properties:
-      #     SubnetId: !Ref PrivateSubnet2
-      #     RouteTableId: !Ref PrivateRouteTable
-
-      #Create EC2 Instances in public and private subnet 
-      MyInstance:
-        Type: AWS::EC2::Instance
-        Properties:
-          AvailabilityZone: us-east-1a
-          ImageId: ami-0ff8a91507f77f867
-      #Hint: look at cloud formation template sections, you will need to parametrize stuff 
-      #Hint: look at cloud formation intrinsic functions and pseudo parameters they will be used.
+          RouteTableId: !Ref PrivateRouteTable #best practice to connect to route table instead of leaving it undeclared
+      
