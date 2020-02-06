@@ -62,13 +62,6 @@
         Properties:
           VpcId: !Ref PubPrivateVPC
       
-      PrivateRoute:
-        Type: 'AWS::EC2::Route' 
-        Properties:
-          RouteTableId: !Ref PrivateRouteTable
-          DestinationCidrBlock: 0.0.0.0/0
-          #no GatewayID because no access to internet makes it private
-     
       PrivateSubnet1RouteTableAssociation:
         Type: 'AWS::EC2::SubnetRouteTableAssociation' 
         Properties:
